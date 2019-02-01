@@ -15,6 +15,23 @@ const workspace = argv.workspace || process.cwd();
 const version = argv.version || '1.0.default';
 const desc = argv.desc || dateFormat(new Date(), 'yyyy年MM月dd日 HH点mm分ss秒') + ' 提交上传';
 
+
+const open = async () => {
+    // 上传
+    let res = await httpRequest('/open', {
+        projectpath: workspace,
+    });
+
+    if (res.result === false && res.data.statusCode !== 0) {
+        console.error(':open error!');
+        console.error(res.errmsg);
+        process.exit(1)
+    } else {
+        console.log('open success!');
+        console.log("devtool启动成功！");
+    }
+};
+
 const preview = async () => {
     let res = await getPreviewImage('preview.png', {
         projectpath: workspace,
@@ -48,18 +65,26 @@ const upload = async (upload_version, upload_desc) => {
     }
 };
 
-if (!workspace) {
-    console.error("缺少workspace！");
-    process.exit(1)
+const start = async () => {
+
+    if (!workspace) {
+        console.error("缺少workspace！");
+        process.exit(1)
+    }
+
+    if (fsExistsSync(path.join(workspace, 'project.config.json'))) {
+        await open();
+
+        if (mode === 'preview') {
+            await preview();
+        } else if (mode === 'upload') {
+            await upload(version, desc);
+        }
+    } else {
+        console.error("workspace下未找到 project.config.json，请指定为小程序目录。");
+        process.exit(1)
+    }
+
 }
 
-if (fsExistsSync(path.join(workspace, 'project.config.json'))) {
-    if (mode === 'preview') {
-        preview();
-    } else if (mode === 'upload') {
-        upload(version, desc);
-    }
-} else {
-    console.error("workspace下未找到 project.config.json，请指定为小程序目录。");
-    process.exit(1)
-}
+start();

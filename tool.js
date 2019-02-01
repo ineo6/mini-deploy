@@ -6,18 +6,6 @@ const qs = require('querystring');
 
 let httpPort;
 
-const writeTool = {
-    readJsonFile: function (filename) {
-        return JSON.parse(fs.readFileSync(filename))
-    },
-    writeJsonFile: function (filename, json) {
-        fs.writeFileSync(filename, JSON.stringify(json, null, 2));
-    },
-    writeFile: function (filename, jsStr) {
-        fs.writeFileSync(filename, jsStr)
-    }
-};
-
 function getHttpPort() {
     if (httpPort) {
         return httpPort
@@ -39,6 +27,9 @@ function getHttpPort() {
     const portFile = path.join(os.homedir(), portPath);
     const port = fs.readFileSync(portFile);
     httpPort = port.toString();
+
+    console.log('微信开发者工具运行在' + httpPort + '端口');
+
     return httpPort
 }
 
@@ -50,23 +41,50 @@ function getHttpPort() {
  * (new Date()).pattern("yyyy-MM-dd EEE hh:mm:ss") ==> 2009-03-10 星期二 08:09:04
  * (new Date()).pattern("yyyy-M-d h:m:s.S") ==> 2006-7-2 8:9:4.18
  */
-function dateFormat(dateObj, fmt) { //author: meizz
-    var o = {
-        "M+": dateObj.getMonth() + 1, //月份
-        "d+": dateObj.getDate(), //日
-        "h+": dateObj.getHours(), //小时
-        "m+": dateObj.getMinutes(), //分
-        "s+": dateObj.getSeconds(), //秒
-        "q+": Math.floor((dateObj.getMonth() + 3) / 3), //季度
-        "S": dateObj.getMilliseconds() //毫秒
+function dateFormat(dataObj, fmt) {
+    const o = {
+        "M+": dataObj.getMonth() + 1, //月份
+        "d+": dataObj.getDate(), //日
+        "h+": dataObj.getHours() % 12 == 0 ? 12 : dataObj.getHours() % 12, //小时
+        "H+": dataObj.getHours(), //小时
+        "m+": dataObj.getMinutes(), //分
+        "s+": dataObj.getSeconds(), //秒
+        "q+": Math.floor((dataObj.getMonth() + 3) / 3), //季度
+        "S": dataObj.getMilliseconds() //毫秒
     };
-    if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (dateObj.getFullYear() + "").substr(4 - RegExp.$1.length));
-    for (var k in o)
-        if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+    const week = {
+        "0": "/u65e5",
+        "1": "/u4e00",
+        "2": "/u4e8c",
+        "3": "/u4e09",
+        "4": "/u56db",
+        "5": "/u4e94",
+        "6": "/u516d"
+    };
+    if (/(y+)/.test(fmt)) {
+        fmt = fmt.replace(RegExp.$1, (dataObj.getFullYear() + "").substr(4 - RegExp.$1.length));
+    }
+    if (/(E+)/.test(fmt)) {
+        fmt = fmt.replace(RegExp.$1, ((RegExp.$1.length > 1) ? (RegExp.$1.length > 2 ? "/u661f/u671f" : "/u5468") : "") + week[dataObj.getDay() + ""]);
+    }
+    for (const k in o) {
+        if (new RegExp("(" + k + ")").test(fmt)) {
+            fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+        }
+    }
     return fmt;
 }
 
-module.exports = Object.assign(writeTool, {
+function fsExistsSync(path) {
+    try {
+        fs.accessSync(path, fs.F_OK);
+    } catch (e) {
+        return false;
+    }
+    return true;
+}
+
+module.exports = {
     httpRequest: function (urlPath, data = {}, method = 'get') {
         urlPath = urlPath + '?' + qs.stringify(data);
         return new Promise(function (resolve, reject) {
@@ -118,9 +136,11 @@ module.exports = Object.assign(writeTool, {
             req.on('error', (e) => {
                 resolve({result: false, errmsg: e.message});
             });
+
             req.end();
         })
 
     },
     dateFormat: dateFormat,
-});
+    fsExistsSync: fsExistsSync,
+};

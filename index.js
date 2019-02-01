@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+const path = require('path');
 const argv = require('yargs').argv;
 
 /**
@@ -6,10 +7,11 @@ const argv = require('yargs').argv;
  * 请先打开微信开发工具，并完成登录
  * **/
 
-const {httpRequest, getPreviewImage, dateFormat} = require('./tool');
+const {httpRequest, getPreviewImage, dateFormat, fsExistsSync} = require('./tool');
 
-const buildType = argv.buildType || 'dev';
-const workspace = argv.workspace || '';
+const mode = argv.mode || 'preview';
+// 默认当前目录
+const workspace = argv.workspace || process.cwd();
 const version = argv.version || '1.0.default';
 const desc = argv.desc || dateFormat(new Date(), 'yyyy年MM月dd日 HH点mm分ss秒') + ' 提交上传';
 
@@ -26,7 +28,7 @@ const preview = async () => {
         console.log('preview success!');
         console.log("预览成功！请扫描二维码进入开发版！")
     }
-}
+};
 
 const upload = async (upload_version, upload_desc) => {
     // 上传
@@ -42,17 +44,22 @@ const upload = async (upload_version, upload_desc) => {
         process.exit(1)
     } else {
         console.log('upload success!');
-        console.log("上传成功！请到微信小程序后台设置体验版或提交审核！")
+        console.log("上传成功！请到微信小程序后台设置体验版或提交审核！");
     }
-}
+};
 
 if (!workspace) {
-    console.error("缺少workspace！")
-    return false;
+    console.error("缺少workspace！");
+    process.exit(1)
 }
 
-if (buildType === 'dev') {
-    preview();
-} else if (buildType === 'prod' || buildType === 'build') {
-    upload(version, desc);
+if (fsExistsSync(path.join(workspace, 'project.config.json'))) {
+    if (mode === 'preview') {
+        preview();
+    } else if (mode === 'upload') {
+        upload(version, desc);
+    }
+} else {
+    console.error("workspace下未找到 project.config.json，请指定为小程序目录。");
+    process.exit(1)
 }

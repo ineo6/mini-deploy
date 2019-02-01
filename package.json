@@ -1,24 +1,24 @@
 {
-  "name": "deploy-mini",
+  "name": "mini-deploy",
   "version": "1.0.0",
-  "description": "",
+  "description": "微信小程序发布助手",
   "main": "index.js",
   "bin": {
-    "deploy-mini": "index.js"
+    "mini-deploy": "index.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ineo6/deploy-mini.git"
+    "url": "git+https://github.com/ineo6/mini-deploy.git"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "ineo6",
+  "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ineo6/deploy-mini/issues"
+    "url": "https://github.com/ineo6/mini-deploy/issues"
   },
-  "homepage": "https://github.com/ineo6/deploy-mini#readme",
+  "homepage": "https://github.com/ineo6/mini-deploy#readme",
   "dependencies": {
     "querystring": "^0.2.0",
     "shelljs": "^0.8.3",

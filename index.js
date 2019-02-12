@@ -12,12 +12,13 @@ const {httpRequest, getPreviewImage, dateFormat, fsExistsSync} = require('./tool
 const mode = argv.mode || 'preview';
 // 默认当前目录
 const workspace = argv.workspace || process.cwd();
-const version = argv.version || '1.0.default';
+const version = argv.ver || '1.0.default';
 const desc = argv.desc || dateFormat(new Date(), 'yyyy年MM月dd日 HH点mm分ss秒') + ' 提交上传';
 
+console.log(argv);
 
 const open = async () => {
-    // 上传
+    // 打开微信开发工具
     let res = await httpRequest('/open', {
         projectpath: workspace,
     });
@@ -85,6 +86,6 @@ const start = async () => {
         process.exit(1)
     }
 
-}
+};
 
 start();

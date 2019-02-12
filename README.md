@@ -35,7 +35,7 @@ npm install --save-dev mini-deploy
 
 小程序项目地址，默认为命令执行目录，会检查`project.config.json`是否存在。
 
-#### `version`
+#### `ver`
 
 上传版本号，默认为`1.0.0`
 

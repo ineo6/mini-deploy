@@ -23,7 +23,7 @@ const open = async () => {
         projectpath: workspace,
     });
 
-    if (res.result === false && res.data.statusCode !== 0) {
+    if (res.result === false && res.data && res.data.statusCode !== 0) {
         console.error(':open error!');
         console.error(res.errmsg);
         process.exit(1)

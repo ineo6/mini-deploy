@@ -27,7 +27,7 @@ npm install --save-dev mini-deploy
 
 #### `mode`
 
-预览或者上传.
+预览（`preview`）或者上传（`upload`）。
 
 > preview 预览时会在`workspace`目录下生成二维码`preview.png`，在`jenkins`中可以读取图片在`job`结果中显示，大家可以自行扩展。
 

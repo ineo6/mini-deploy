@@ -3,6 +3,7 @@ const path = require('path');
 const os = require('os');
 const http = require('http');
 const qs = require('querystring');
+const cp = require('child_process');
 
 let httpPort;
 
@@ -84,63 +85,124 @@ function fsExistsSync(path) {
     return true;
 }
 
+function shell(path, args, opt, verbase) {
+    let stdout = "";
+    let stderr = "";
+
+    const cmd = `${path} ${args.join(" ")}`;
+    if (verbase) {
+        console.log(cmd);
+    }
+    let printStdoutBufferMessage = (message) => {
+        const str = message.toString();
+        stdout += str;
+        if (verbase) {
+            console.log(str);
+        }
+    };
+    let printStderrBufferMessage = (message) => {
+        let str = message.toString();
+        stderr += str;
+        if (verbase) {
+            console.log(str);
+        }
+    };
+
+    return new Promise((resolve, reject) => {
+        // path = "\"" + path + "\"";
+        // var shell = cp.spawn(path + " " + args.join(" "));
+        const shell = cp.spawn(path, args);
+        shell.on("error", (message) => {
+            console.log(message);
+        });
+        shell.stderr.on("data", printStderrBufferMessage);
+        shell.stderr.on("error", printStderrBufferMessage);
+        shell.stdout.on("data", printStdoutBufferMessage);
+        shell.stdout.on("error", printStdoutBufferMessage);
+        shell.on('exit', function (code) {
+            if (code != 0) {
+                if (verbase) {
+                    console.log('Failed: ' + code);
+                }
+                reject({code, stdout, stderr, path, args});
+            }
+            else {
+                resolve({code, stdout, stderr, path, args});
+            }
+        });
+    });
+}
+
+async function executeCommand(command, options = {}) {
+    return new Promise((resolve, reject) => {
+        cp.exec(command, options, (error, stdout, stderr) => {
+            resolve({error, stdout, stderr})
+        });
+    })
+}
+
+function getPreviewImage(output, data = {}, method = 'get') {
+    let imgData = '';
+
+    return new Promise(function (resolve, reject) {
+        let req = http.request({
+            protocol: 'http:',
+            host: '127.0.0.1',
+            port: getHttpPort(),
+            method: method,
+            path: '/preview?' + qs.stringify(data),
+        }, function (res) {
+            res.setEncoding('binary');
+
+            res.on('data', function (chunk) {
+                imgData += chunk
+            });
+
+            res.on('end', function () {
+                fs.writeFile(data.projectpath + '/' + output, imgData, 'binary', function (err) {
+                    if (err) {
+                        resolve({result: false, errmsg: '生成预览QR图失败'});
+                    } else {
+                        resolve({result: true, data: res});
+                    }
+                })
+            });
+        });
+
+        req.on('error', (e) => {
+            resolve({result: false, errmsg: e.message});
+        });
+
+        req.end();
+    })
+
+}
+
+function httpRequest(urlPath, data = {}, method = 'get') {
+    urlPath = urlPath + '?' + qs.stringify(data);
+    return new Promise(function (resolve, reject) {
+        let req = http.request({
+            protocol: 'http:',
+            host: '127.0.0.1',
+            port: getHttpPort(),
+            method: method,
+            path: urlPath,
+        }, function (res) {
+            resolve({result: true, data: res});
+        });
+
+        req.on('error', (e) => {
+            resolve({result: false, errmsg: e.message});
+        });
+        req.end();
+    })
+}
+
 module.exports = {
-    httpRequest: function (urlPath, data = {}, method = 'get') {
-        urlPath = urlPath + '?' + qs.stringify(data);
-        return new Promise(function (resolve, reject) {
-            let req = http.request({
-                protocol: 'http:',
-                host: '127.0.0.1',
-                port: getHttpPort(),
-                method: method,
-                path: urlPath,
-            }, function (res) {
-                resolve({result: true, data: res});
-            });
-
-            req.on('error', (e) => {
-                resolve({result: false, errmsg: e.message});
-            });
-            req.end();
-        })
-    },
-    getPreviewImage: function (output, data = {}, method = 'get') {
-
-        let imgData = '';
-
-        return new Promise(function (resolve, reject) {
-            let req = http.request({
-                protocol: 'http:',
-                host: '127.0.0.1',
-                port: getHttpPort(),
-                method: method,
-                path: '/preview?' + qs.stringify(data),
-            }, function (res) {
-                res.setEncoding('binary');
-
-                res.on('data', function (chunk) {
-                    imgData += chunk
-                });
-
-                res.on('end', function () {
-                    fs.writeFile(data.projectpath + '/' + output, imgData, 'binary', function (err) {
-                        if (err) {
-                            resolve({result: false, errmsg: '生成预览QR图失败'});
-                        } else {
-                            resolve({result: true, data: res});
-                        }
-                    })
-                });
-            });
-
-            req.on('error', (e) => {
-                resolve({result: false, errmsg: e.message});
-            });
-
-            req.end();
-        })
-
-    },
     dateFormat: dateFormat,
     fsExistsSync: fsExistsSync,
+    executeCommand: executeCommand,
+    shell: shell,
+    getPreviewImage: getPreviewImage,
+    httpRequest: httpRequest,
 };

@@ -23,11 +23,10 @@ const httpOpen = async () => {
     });
 
     if (res.result === false && res.data && res.data.statusCode !== 0) {
-        console.error(':open error!');
+        console.error('open error!');
         console.error(res.errmsg);
-        process.exit(1)
+        process.exit()
     } else {
-        console.log('open success!');
         console.log("devtool启动成功！");
     }
 };
@@ -70,23 +69,23 @@ async function runWxIde() {
             const result = await tool.shell(wxpath, ["-o"], null, true);
 
             if (result.code == 0) {
-                console.error(':open error!');
-                console.error(res.errmsg);
-                process.exit(1);
-            } else {
-                console.log('open success!');
                 console.log("devtool启动成功！");
+
+                return true;
+            } else {
+                console.error('open error!');
+                console.error(res.errmsg);
+                return false;
             }
         }
         catch (e) {
-            // await tool.shell(wxpath, ["-o"], null, true);
+            return false;
         }
     }
     else {
-        throw '请安装最新微信开发者工具';
-        process.exit(1);
+        console.error("请安装最新微信开发者工具");
+        return false;
     }
-    return -0xF000
 }
 
 const preview = async () => {
@@ -95,9 +94,9 @@ const preview = async () => {
     });
 
     if (res.result === false) {
-        console.error(':preview error!');
+        console.error('preview error!');
         console.error(res.errmsg);
-        process.exit(1)
+        process.exit()
     } else {
         console.log('preview success!');
         console.log("预览成功！请扫描二维码进入开发版！")
@@ -115,7 +114,7 @@ const upload = async (upload_version, upload_desc) => {
     if (res.result === false) {
         console.error('upload error!');
         console.error(res.errmsg);
-        process.exit(1)
+        process.exit()
     } else {
         console.log('upload success!');
         console.log("上传成功！请到微信小程序后台设置体验版或提交审核！");
@@ -123,25 +122,22 @@ const upload = async (upload_version, upload_desc) => {
 };
 
 const start = async () => {
-
-    if (!workspace) {
-        console.error("缺少workspace！");
-        process.exit(1)
-    }
-
     if (tool.fsExistsSync(path.join(workspace, 'project.config.json'))) {
-        await runWxIde();
+        const result = await runWxIde();
 
-        if (mode === 'preview') {
-            await preview();
-        } else if (mode === 'upload') {
-            await upload(version, desc);
+        if (result) {
+            if (mode === 'preview') {
+                await preview();
+            } else if (mode === 'upload') {
+                await upload(version, desc);
+            }
+        } else {
+            process.exit()
         }
     } else {
         console.error("workspace下未找到 project.config.json，请指定为小程序目录。");
-        process.exit(1)
+        process.exit()
     }
-
 };
 
 start();

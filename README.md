@@ -1,6 +1,5 @@
 # 微信小程序发布助手（mini-deploy）
 
-[![Dependencies][dependencyci-badge]][dependencyci]
 [![version][version-badge]][package]
 [![downloads][downloads-badge]][npm-stat]
 
@@ -10,6 +9,12 @@
 [![Star on GitHub][github-star-badge]][github-star]
 
 微信小程序发布助手, 支持预览和上传。可以和`jenkins`结合使用，实现微信小程序自动化发布。
+
+## 功能特性
+
+- 自动重登机制，并且登录之后会恢复上次任务
+- 覆盖大部分微信小程序命令行功能
+- 
 
 ## Installation
 
@@ -23,7 +28,27 @@ npm install --save-dev mini-deploy
 
 ## Usage
 
-`mini-deploy [args]`
+```sh
+Usage: mini-deploy [--options ...]
+
+Options:
+  -V, --version                       output the version number
+  -w, --workspace [value]             微信小程序工作区目录 (default: "/Users/neo/WorkSpace/deploy-mini")
+  -ver, --ver [value]                 发布版本号 (default: "1.0.0")
+  -d, --desc [value]                  发布简介 (default: "2019年08月16日15点25分20秒提交上传")
+  -m, --mode [value]                  模式: preview|upload (default: "preview")
+  --upload.log [value]                上传日志路径
+  --preview.format [value]            二维码输出形式：terminal|base64|image
+  --preview.qr [value]                二维码存放路径
+  --preview.log [value]               预览日志路径
+  --preview.compileCondition [value]  自定义编译条件
+  --login.format [value]              二维码输出形式：terminal|base64|image
+  --login.qr [value]                  二维码存放路径
+  --login.log [value]                 登录日志路径
+  -d, --debug                         debug mode
+  -h, --help                          output usage information
+
+```
 
 #### `mode`
 
@@ -33,7 +58,7 @@ npm install --save-dev mini-deploy
 
 #### `workspace`
 
-小程序项目地址，默认为命令执行目录，会检查`project.config.json`是否存在。
+小程序项目地址，默认会取命令执行目录，同时会检查`project.config.json`是否存在。
 
 #### `ver`
 
@@ -43,13 +68,55 @@ npm install --save-dev mini-deploy
 
 上传描述, 默认为'xxxx年x月x日 x点x分x秒 提交上传'
 
+### `upload.log`
+
+指定后，会将本次上传的额外信息以 json 格式输出至指定路径，如代码包大小、分包大小信息。
+
+需要注意的是日志文件需要提前创建。
+
+### `preview.format`
+
+预览二维码的格式，format 可选值包括 terminal（命令行输出）, base64, image。
+
+### `preview.qr`
+
+二维码输出位置，相对于项目。
+
+### `preview.log`
+
+定后，会将本次预览的额外信息以 json 格式输出至指定路径，如代码包大小、分包大小信息。
+
+### `preview.compileCondition`
+
+指定自定义编译条件，json 条件可指定两个字段，pathName 表示打开的页面，不填表示首页，query 表示页面参数。
+
+示例如下：
+
+```json
+{"pathName":"pages/index/index","query":"x=1&y=2"}
+```
+
+### `login.format`
+
+同`preview.format`
+
+### `login.qr`
+
+同 `preview.qr`
+
+### `login.log`
+
+输出登录结果到指定文件
 
 ## 扩展
 
 - [每日优鲜便利购微信小程序集成 Jenkins 生成二维码发版](https://testerhome.com/topics/14913#reply-115145)
 - [微信小程序集成 Jenkins](https://segmentfault.com/a/1190000016247970)
 
-[dependencyci-badge]: https://dependencyci.com/github/ineo6/mini-deploy/badge?style=flat-square
+## 更新日志
+
+[changelog](./changelog.md)
+
 [dependencyci]: https://dependencyci.com/github/ineo6/mini-deploy
 [version-badge]: https://img.shields.io/npm/v/mini-deploy.svg?style=flat-square
 [package]: https://www.npmjs.com/package/mini-deploy

@@ -1,143 +1,83 @@
 #!/usr/bin/env node
 const path = require('path');
-const argv = require('yargs').argv;
-const os = require('os');
+const program = require('commander');
 
-/**
- * @link https://developers.weixin.qq.com/miniprogram/dev/devtools/http.html
- * 请先打开微信开发工具，并完成登录
- * **/
+const WeChatCli = require('./weChatCli');
+const packageJson = require('./package.json');
 
 const tool = require('./tool');
 
-const mode = argv.mode || 'preview';
-// 默认当前目录
-const workspace = argv.workspace || process.cwd();
-const version = argv.ver || '1.0.default';
-const desc = argv.desc || tool.dateFormat(new Date(), 'yyyy年MM月dd日 HH点mm分ss秒') + ' 提交上传';
+program
+  .version(packageJson.version)
+  .usage('[--options ...]')
+  .option('-w, --workspace [value]', '微信小程序工作区目录', process.cwd())
+  .option('-ver, --ver [value]', '发布版本号', '1.0.0')
+  .option('-d, --desc [value]', '发布简介', tool.dateFormat(new Date(), 'yyyy年MM月dd日HH点mm分ss秒') + '提交上传')
+  .option('-m, --mode [value]', '模式: preview|upload', 'preview')
+  .option('--upload.log [value]', '上传日志路径')
+  .option('--preview.format [value]', '二维码输出形式：terminal|base64|image', 'image')
+  .option('--preview.qr [value]', '二维码存放路径', 'preview.png')
+  .option('--preview.log [value]', '预览日志路径')
+  .option('--preview.compileCondition [value]', '自定义编译条件')
+  .option('--login.format [value]', '二维码输出形式：terminal|base64|image', 'terminal')
+  .option('--login.qr [value]', '二维码存放路径')
+  .option('--login.log [value]', '登录日志路径')
+  .option('-d, --debug', 'debug mode');
 
-const httpOpen = async () => {
-    // 打开微信开发工具
-    let res = await httpRequest('/open', {
-        projectpath: workspace,
-    });
+program.parse(process.argv);
 
-    if (res.result === false && res.data && res.data.statusCode !== 0) {
-        console.error('open error!');
-        console.error(res.errmsg);
-        process.exit()
-    } else {
-        console.log("devtool启动成功！");
-    }
-};
+program.on('--help', () => {
+  console.log('  Examples:');
+  console.log('');
+  console.log('    $ mini-deploy');
+  console.log('');
+});
 
-async function runWxIde() {
-    let wxPaths = [];
-    switch (os.platform()) {
-        case "darwin":
-            const result = await tool.executeCommand("defaults read com.tencent.wechat.devtools LastRunAppBundlePath");
-            if (result.stdout != '') {
-                const stdout = result.stdout.replace(/\n/g, "");
-                wxPaths = [path.join(stdout, "/Contents/Resources/app.nw/bin/cli")];
-            }
-            // defaults read
-            wxPaths.push("/Applications/wechatwebdevtools.app/Contents/Resources/app.nw/bin/cli");
-            break;
-        case "win32":
-            // defaults read
-            wxPaths = [
-                "C:\\Program Files (x86)\\Tencent\\微信web开发者工具\\cli.bat",
-                "C:\\Program Files\\Tencent\\微信web开发者工具\\cli.bat"
-            ];
-            const iconv = require('iconv-lite');
-            const encoding = 'cp936';
-            const binaryEncoding = 'binary';
-            const result2 = await tool.executeCommand('REG QUERY "HKLM\\SOFTWARE\\Wow6432Node\\Tencent\\微信web开发者工具"', {encoding: binaryEncoding});
-            const stdout = iconv.decode(new Buffer(result2.stdout, binaryEncoding), encoding);
-            if (stdout != '') {
-                const stdoutArr = stdout.split("\r\n");
-                let exePath = stdoutArr.find((path) => path.indexOf(".exe") != -1);
-                exePath = exePath.split("  ").find((path) => path.indexOf(".exe") != -1);
-                exePath = path.join(path.dirname(exePath), 'cli.bat');
-                wxPaths.unshift(exePath);
-            }
-            break;
-    }
-    const wxpath = wxPaths.find((wxpath) => tool.fsExistsSync(wxpath));
-    if (wxpath) {
-        try {
-            const result = await tool.shell(wxpath, ["-o"], null, true);
-
-            if (result.code == 0) {
-                console.log("devtool启动成功！");
-
-                return true;
-            } else {
-                console.error('open error!');
-                console.error(res.errmsg);
-                return false;
-            }
-        }
-        catch (e) {
-            return false;
-        }
-    }
-    else {
-        console.error("请安装最新微信开发者工具");
-        return false;
-    }
-}
+const weChatCli = new WeChatCli(program);
 
 const preview = async () => {
-    let res = await tool.getPreviewImage('preview.png', {
-        projectpath: workspace,
-    });
+  let res = await weChatCli.preview();
 
-    if (res.result === false) {
-        console.error('preview error!');
-        console.error(res.errmsg);
-        process.exit()
-    } else {
-        console.log('preview success!');
-        console.log("预览成功！请扫描二维码进入开发版！")
-    }
+  if (res && res.code === 0) {
+    console.log(res.stdout);
+    console.log('预览成功！请扫描二维码进入开发版！');
+  } else {
+    console.error('preview error!');
+    console.error(res && res.stderr);
+    process.exit();
+  }
 };
 
-const upload = async (upload_version, upload_desc) => {
-    // 上传
-    let res = await tool.httpRequest('/upload', {
-        projectpath: workspace,
-        version: upload_version,
-        desc: upload_desc,
-    });
+const upload = async () => {
+  // 上传
+  let res = await weChatCli.upload();
 
-    if (res.result === false) {
-        console.error('upload error!');
-        console.error(res.errmsg);
-        process.exit()
-    } else {
-        console.log('upload success!');
-        console.log("上传成功！请到微信小程序后台设置体验版或提交审核！");
-    }
+  if (res && res.code === 0) {
+    console.log('上传成功！请到微信小程序后台设置体验版或提交审核！');
+  } else {
+    console.error('upload error!');
+    console.error(res && res.stderr);
+    process.exit();
+  }
 };
 
 const start = async () => {
-    if (tool.fsExistsSync(path.join(workspace, 'project.config.json'))) {
-        const result = await runWxIde();
+  if (tool.fsExistsSync(path.join(program.workspace, 'project.config.json'))) {
+    const result = await weChatCli.start();
 
-        if (result) {
-            if (mode === 'preview') {
-                await preview();
-            } else if (mode === 'upload') {
-                await upload(version, desc);
-            }
-        } else {
-            process.exit()
-        }
+    if (result) {
+      if (program.mode === 'preview') {
+        await preview();
+      } else if (program.mode === 'upload') {
+        await upload();
+      }
     } else {
-        console.error("workspace下未找到 project.config.json，请指定为小程序目录。");
-        process.exit()
+      process.exit();
     }
+  } else {
+    console.error('workspace下未找到 project.config.json，请指定为小程序目录。');
+    process.exit();
+  }
 };
 
 start();

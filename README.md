@@ -34,19 +34,18 @@ Options:
   -V, --version                       output the version number
   -w, --workspace [value]             微信小程序工作区目录 (default: "/Users/neo/WorkSpace/deploy-mini")
   -ver, --ver [value]                 发布版本号 (default: "1.0.0")
-  -d, --desc [value]                  发布简介 (default: "2019年08月16日15点25分20秒提交上传")
+  -d, --desc [value]                  发布简介 (default: "2019年08月19日13点07分21秒提交上传")
   -m, --mode [value]                  模式: preview|upload (default: "preview")
   --upload.log [value]                上传日志路径
-  --preview.format [value]            二维码输出形式：terminal|base64|image
-  --preview.qr [value]                二维码存放路径
+  --preview.format [value]            二维码输出形式：terminal|base64|image (default: "image")
+  --preview.qr [value]                二维码存放路径 (default: "preview.png")
   --preview.log [value]               预览日志路径
   --preview.compileCondition [value]  自定义编译条件
-  --login.format [value]              二维码输出形式：terminal|base64|image
+  --login.format [value]              二维码输出形式：terminal|base64|image (default: "terminal")
   --login.qr [value]                  二维码存放路径
   --login.log [value]                 登录日志路径
   -d, --debug                         debug mode
   -h, --help                          output usage information
-
 ```
 
 #### `mode`
@@ -98,6 +97,10 @@ Options:
 ### `login.format`
 
 同`preview.format`
+
+默认为`terminal`，会把二维码输出到流中，在`jenkins`中通过查看控制台输出，可以直接扫描登录。
+
+如果有其他需求，可以自定义输出到文件。
 
 ### `login.qr`
 

@@ -7,8 +7,7 @@
     "mini-deploy": "index.js"
   },
   "scripts": {
-    "upload-test": "node ./index.js --mode upload --workspace ~/WorkSpace/baiyunsheng/",
-    "preview-test": "node ./index.js --mode preview --workspace ~/WorkSpace/baiyunsheng/"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "husky": {
     "hooks": {

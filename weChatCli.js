@@ -27,7 +27,12 @@ class WeChatCli {
     };
 
     this.previewConfig.qr = this.formatQr(options['preview.qr'], options['preview.format']);
+    this.previewConfig.format = options['preview.format'];
+    this.previewConfig.originQr = options['preview.qr'];
+
     this.loginConfig.qr = this.formatQr(options['login.qr'], options['login.format']);
+    this.loginConfig.format = options['login.format'];
+    this.loginConfig.originQr = options['login.qr'];
   }
 
   formatQr(qr, format) {
@@ -167,6 +172,16 @@ class WeChatCli {
   async reLogin() {
     // todo 能否自动获取二维码
     console.error('微信登录已过期，请重新扫码登录！');
+
+    // jenkins中利用该信息显示Build详情
+    if (this.loginConfig.format === 'image') {
+      const linkUrl = path.join('./ws', this.loginConfig.originQr);
+
+      // eslint-disable-next-line
+      console.log('[login] <img src="' + linkUrl + '" alt="登录码" width="200" height="200" /><a href="' + linkUrl + '" target="_blank">登录码</a>');
+    } else if (this.loginConfig.format === 'terminal') {
+      console.log('[login] 进入Build详情扫码登录微信开发工具');
+    }
 
     const loginResult = await this.login();
 

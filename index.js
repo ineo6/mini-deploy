@@ -16,11 +16,11 @@ program
   .option('-m, --mode [value]', '模式: preview|upload', 'preview')
   .option('--upload.log [value]', '上传日志路径')
   .option('--preview.format [value]', '二维码输出形式：terminal|base64|image', 'image')
-  .option('--preview.qr [value]', '二维码存放路径', 'preview.png')
+  .option('--preview.qr [value]', '二维码存放路径(相对项目)', 'preview.png')
   .option('--preview.log [value]', '预览日志路径')
   .option('--preview.compileCondition [value]', '自定义编译条件')
   .option('--login.format [value]', '二维码输出形式：terminal|base64|image', 'terminal')
-  .option('--login.qr [value]', '二维码存放路径')
+  .option('--login.qr [value]', '二维码存放路径(相对项目)')
   .option('--login.log [value]', '登录日志路径')
   .option('-d, --debug', 'debug mode');
 
@@ -39,8 +39,17 @@ const preview = async () => {
   let res = await weChatCli.preview();
 
   if (res && res.code === 0) {
-    console.log(res.stdout);
     console.log('预览成功！请扫描二维码进入开发版！');
+
+    // jenkins中利用该信息显示Build详情
+    if (program['preview.format'] === 'image') {
+      const linkUrl = path.join('./ws', program['preview.qr']);
+
+      // eslint-disable-next-line
+      console.log('[preview] <img src="' + linkUrl + '" alt="开发码" width="200" height="200" /><a href="' + linkUrl + '" target="_blank">开发码</a>');
+    } else if (program['preview.format'] === 'terminal') {
+      console.log('[preview] 进入Build详情扫开发码进入小程序');
+    }
   } else {
     console.error('preview error!');
     console.error(res && res.stderr);

@@ -48,6 +48,11 @@ Options:
   -h, --help                          output usage information
 ```
 
+执行命令后返回结果值:
+
+- 0: 成功
+- 1: 失败
+
 #### `mode`
 
 预览（`preview`）或者上传（`upload`）。

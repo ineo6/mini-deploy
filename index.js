@@ -7,6 +7,8 @@ const packageJson = require('./package.json');
 
 const tool = require('./tool');
 
+const errorCode = WeChatCli.errorCode;
+
 program
   .version(packageJson.version)
   .usage('[--options ...]')
@@ -38,8 +40,8 @@ const weChatCli = new WeChatCli(program);
 const preview = async () => {
   let res = await weChatCli.preview();
 
-  if (res && res.code === 0) {
-    console.log('预览成功！请扫描二维码进入开发版！');
+  if (res && res.errorCode === 0) {
+    console.log(res.message);
 
     // jenkins中利用该信息显示Build详情
     if (program['preview.format'] === 'image') {
@@ -50,10 +52,12 @@ const preview = async () => {
     } else if (program['preview.format'] === 'terminal') {
       console.log('[preview] 进入Build详情扫开发码进入小程序');
     }
+
+    process.exit(res.errorCode);
   } else {
     console.error('preview error!');
-    console.error(res && res.stderr);
-    process.exit();
+    console.error(res && res.message);
+    process.exit(res.errorCode);
   }
 };
 
@@ -61,12 +65,13 @@ const upload = async () => {
   // 上传
   let res = await weChatCli.upload();
 
-  if (res && res.code === 0) {
-    console.log('上传成功！请到微信小程序后台设置体验版或提交审核！');
+  if (res && res.errorCode === 0) {
+    console.log(res.message);
+    process.exit(res.errorCode);
   } else {
     console.error('upload error!');
-    console.error(res && res.stderr);
-    process.exit();
+    console.error(res && res.message);
+    process.exit(res.errorCode);
   }
 };
 
@@ -81,11 +86,11 @@ const start = async () => {
         await upload();
       }
     } else {
-      process.exit();
+      process.exit(errorCode.failed);
     }
   } else {
     console.error('workspace下未找到 project.config.json，请指定为小程序目录。');
-    process.exit();
+    process.exit(errorCode.failed);
   }
 };
 

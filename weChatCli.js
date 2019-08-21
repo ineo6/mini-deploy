@@ -4,6 +4,18 @@ const shellJs = require('shelljs');
 
 const tool = require('./tool');
 
+const errorCode = {
+  success: 0,
+  failed: 1,
+}
+
+function createError(code, msg) {
+  return {
+    errorCode: code,
+    message: msg || ''
+  }
+}
+
 class WeChatCli {
   constructor(options) {
     this.wxpath = '';
@@ -129,7 +141,7 @@ class WeChatCli {
     try {
       return await this.shell(this.wxpath, args, null, verbose || this.isDebug);
     } catch (e) {
-      // console.log("executeCli error", e.stderr);
+      //console.log('executeCli error', e.stderr);
 
       if (e.stderr.indexOf('"错误 需要重新登录') > 0) {
         throw new Error('reLogin');
@@ -157,14 +169,28 @@ class WeChatCli {
 
       const result = await this.executeCli(args);
 
-      return result;
+      const msg = createError();
+
+      if (result && result.code === 0) {
+        msg.errorCode = errorCode.success;
+        msg.message = '预览成功！请扫描二维码进入开发版！';
+      } else {
+        msg.errorCode = errorCode.success;
+        msg.message = result.stderr;
+      }
+
+      return msg;
     } catch (e) {
+      const msg = createError(errorCode.failed);
+
       if (e.message === 'reLogin') {
         const reLoginResult = await this.reLogin();
 
         if (reLoginResult) {
           return await this.preview();
         }
+
+        return msg;
       }
     }
   }
@@ -186,7 +212,6 @@ class WeChatCli {
     const loginResult = await this.login();
 
     if (loginResult && loginResult.code === 0 && loginResult.stdout.indexOf('login success') >= 0) {
-      // console.log(loginResult.stdout)
       return true;
     } else {
       console.log(loginResult.stderr);
@@ -205,12 +230,28 @@ class WeChatCli {
         this.uploadLog,
       ]);
 
-      return result;
-    } catch (e) {
-      const reLoginResult = await this.reLogin();
+      const msg = createError();
 
-      if (reLoginResult) {
-        return await this.upload();
+      if (result && result.code === 0) {
+        msg.errorCode = errorCode.success;
+        msg.message = '上传成功！请到微信小程序后台设置体验版或提交审核！';
+      } else {
+        msg.errorCode = errorCode.success;
+        msg.message = result.stderr;
+      }
+
+      return msg;
+    } catch (e) {
+      const msg = createError(errorCode.failed);
+
+      if (e.message === 'reLogin') {
+        const reLoginResult = await this.reLogin();
+
+        if (reLoginResult) {
+          return await this.upload();
+        }
+
+        return msg;
       }
     }
   }
@@ -234,5 +275,7 @@ class WeChatCli {
     return await this.executeCli(args, true);
   }
 }
+
+WeChatCli.errorCode = errorCode;
 
 module.exports = WeChatCli;

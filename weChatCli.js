@@ -143,7 +143,7 @@ class WeChatCli {
     } catch (e) {
       //console.log('executeCli error', e.stderr);
 
-      if (e.stderr.indexOf('"错误 需要重新登录') > 0) {
+      if (e.stderr.indexOf('" 需要重新登录') > 0) {
         throw new Error('reLogin');
       }
 

@@ -16,7 +16,8 @@ program
   .option('-ver, --ver [value]', '发布版本号', '1.0.0')
   .option('-d, --desc [value]', '发布简介', tool.dateFormat(new Date(), 'yyyy年MM月dd日HH点mm分ss秒') + '提交上传')
   .option('-m, --mode [value]', '模式: preview|upload', 'preview')
-  .option('--upload.log [value]', '上传日志路径')
+  .option('--resume', '启用任务续传', true)
+  .option('--no-resume', '禁用任务续传')
   .option('--preview.format [value]', '二维码输出形式：terminal|base64|image', 'image')
   .option('--preview.qr [value]', '二维码存放路径(相对项目)', 'preview.png')
   .option('--preview.log [value]', '预览日志路径')
@@ -40,17 +41,21 @@ const weChatCli = new WeChatCli(program);
 const preview = async () => {
   let res = await weChatCli.preview();
 
-  if (res && res.errorCode === 0) {
+  if (res) {
     console.log(res.message);
 
-    // jenkins中利用该信息显示Build详情
-    if (program['preview.format'] === 'image') {
-      const linkUrl = path.join('./ws', program['preview.qr']);
+    if (res.errorCode === 0) {
+      // jenkins中利用该信息显示Build详情
+      if (program['preview.format'] === 'image') {
+        const linkUrl = path.join('./ws', program['preview.qr']);
 
-      // eslint-disable-next-line
-      console.log('[preview] <img src="' + linkUrl + '" alt="开发码" width="200" height="200" /><a href="' + linkUrl + '" target="_blank">开发码</a>');
-    } else if (program['preview.format'] === 'terminal') {
-      console.log('[preview] 进入Build详情扫开发码进入小程序');
+        // eslint-disable-next-line
+        console.log('[mini-deploy] <img src="' + linkUrl + '" alt="开发码" width="200" height="200" /><a href="' + linkUrl + '" target="_blank">开发码</a>');
+      } else if (program['preview.format'] === 'terminal') {
+        console.log('[mini-deploy] 进入Build详情扫开发码进入小程序');
+      }
+    } else if (res.errorCode === 2) {
+      process.exit(res.errorCode);
     }
 
     process.exit(res.errorCode);
@@ -65,9 +70,13 @@ const upload = async () => {
   // 上传
   let res = await weChatCli.upload();
 
-  if (res && res.errorCode === 0) {
-    console.log(res.message);
-    process.exit(res.errorCode);
+  if (res) {
+    if (res.errorCode === 0) {
+      console.log(res.message);
+      process.exit(res.errorCode);
+    } else if (res.errorCode === 2) {
+      process.exit(res.errorCode);
+    }
   } else {
     console.error('upload error!');
     console.error(res && res.message);

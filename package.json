@@ -27,8 +27,7 @@
   "homepage": "https://github.com/ineo6/mini-deploy#readme",
   "dependencies": {
     "commander": "^3.0.0",
-    "iconv-lite": "^0.4.24",
-    "shelljs": "^0.8.3"
+    "iconv-lite": "^0.4.24"
   },
   "devDependencies": {
     "babel-eslint": "^10.0.2",

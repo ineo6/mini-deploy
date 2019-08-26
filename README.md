@@ -36,6 +36,8 @@ Options:
   -ver, --ver [value]                 发布版本号 (default: "1.0.0")
   -d, --desc [value]                  发布简介 (default: "2019年08月19日13点07分21秒提交上传")
   -m, --mode [value]                  模式: preview|upload (default: "preview")
+  --resume                            启用任务续传 (default: true)
+  --no-resume                         禁用任务续传
   --upload.log [value]                上传日志路径
   --preview.format [value]            二维码输出形式：terminal|base64|image (default: "image")
   --preview.qr [value]                二维码存放路径 (default: "preview.png")
@@ -52,6 +54,7 @@ Options:
 
 - 0: 成功
 - 1: 失败
+- 2：需要重新登录
 
 #### `mode`
 
@@ -70,6 +73,14 @@ Options:
 #### `desc`
 
 上传描述, 默认为'xxxx年x月x日 x点x分x秒 提交上传'
+
+#### `resume`
+
+启用任务续传后，上传或者预览过程中完成重新登录后会继续执行之前的任务。
+
+#### `no-resume`
+
+禁用任务续传后，重新登录之后需要再次手动执行任务。
 
 ### `upload.log`
 

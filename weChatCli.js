@@ -1,12 +1,12 @@
 const path = require('path');
 const os = require('os');
-const shellJs = require('shelljs');
 
 const tool = require('./tool');
 
 const errorCode = {
   success: 0,
   failed: 1,
+  waitingLogin: 2,
 }
 
 function createError(code, msg) {
@@ -21,6 +21,7 @@ class WeChatCli {
     this.wxpath = '';
 
     this.isDebug = options.debug;
+    this.resume = options.resume;
 
     this.workspace = options.workspace;
     this.version = options.ver;
@@ -117,33 +118,13 @@ class WeChatCli {
     }
   }
 
-  shell(path, args, opt, verbase) {
-    const cmd = `${path} ${args.join(' ')}`;
-    if (verbase) {
-      console.log(cmd);
-    }
-
-    return new Promise((resolve, reject) => {
-      const result = shellJs.exec(cmd);
-
-      if (result.code !== 0) {
-        if (verbase) {
-          console.log('Failed: ' + result.code);
-        }
-        reject(result);
-      } else {
-        resolve(result);
-      }
-    });
-  }
-
-  async executeCli(args, verbose = false) {
+  async executeCli(args) {
     try {
-      return await this.shell(this.wxpath, args, null, verbose || this.isDebug);
+      return await tool.shell(this.wxpath, args, null, this.isDebug, this.resume);
     } catch (e) {
-      //console.log('executeCli error', e.stderr);
+      // console.log('executeCli error', e);
 
-      if (e.stderr.indexOf('" 需要重新登录') > 0) {
+      if (e.stderr.indexOf('需要重新登录') > 0) {
         throw new Error('reLogin');
       }
 
@@ -186,8 +167,12 @@ class WeChatCli {
       if (e.message === 'reLogin') {
         const reLoginResult = await this.reLogin();
 
-        if (reLoginResult) {
+
+        if (reLoginResult === 1) {
+          // 继续上传
           return await this.preview();
+        } else if (reLoginResult === 2) {
+          msg.errorCode = errorCode.waitingLogin;
         }
 
         return msg;
@@ -204,19 +189,28 @@ class WeChatCli {
       const linkUrl = path.join('./ws', this.loginConfig.originQr);
 
       // eslint-disable-next-line
-      console.log('[login] <img src="' + linkUrl + '" alt="登录码" width="200" height="200" /><a href="' + linkUrl + '" target="_blank">登录码</a>');
+      console.log('[mini-deploy] <img src="' + linkUrl + '" alt="登录码" width="200" height="200" /><a href="' + linkUrl + '" target="_blank">登录码</a>');
     } else if (this.loginConfig.format === 'terminal') {
-      console.log('[login] 进入Build详情扫码登录微信开发工具');
+      console.log('[mini-deploy] 进入Build详情扫码登录微信开发工具');
     }
 
     const loginResult = await this.login();
 
-    if (loginResult && loginResult.code === 0 && loginResult.stdout.indexOf('login success') >= 0) {
-      return true;
+    // 0:失败，1：登录成功，2：等待登录
+    let flag = 0;
+
+    if (loginResult) {
+      if (loginResult.code === 0 && loginResult.stdout.indexOf('login success') >= 0) {
+        flag = 1
+      } else if (loginResult.signal === 'SIGTERM') {
+        console.log(loginResult.stdout);
+        flag = 2;
+      }
     } else {
       console.log(loginResult.stderr);
-      return false;
     }
+
+    return flag;
   }
 
   async upload() {
@@ -247,8 +241,11 @@ class WeChatCli {
       if (e.message === 'reLogin') {
         const reLoginResult = await this.reLogin();
 
-        if (reLoginResult) {
+        if (reLoginResult === 1) {
+          // 继续上传
           return await this.upload();
+        } else if (reLoginResult === 2) {
+          msg.errorCode = errorCode.waitingLogin;
         }
 
         return msg;
@@ -272,7 +269,7 @@ class WeChatCli {
       args.push(this.loginConfig.loginLog);
     }
 
-    return await this.executeCli(args, true);
+    return await this.executeCli(args);
   }
 }
 

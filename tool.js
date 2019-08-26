@@ -52,25 +52,27 @@ function fsExistsSync(path) {
   return true;
 }
 
-function shell(path, args, opt, verbase) {
-  let stdout = '';
+function shell(path, args, opt, verbase, resume) {
+  const stdout = [];
   let stderr = '';
 
   const cmd = `${path} ${args.join(' ')}`;
-  if (verbase) {
+  if (verbase || resume) {
     console.log(cmd);
   }
   let printStdoutBufferMessage = message => {
     const str = message.toString();
-    stdout += str;
-    if (verbase) {
-      console.log(str);
+    stdout.push(str);
+
+    if (verbase || resume) {
+      console.log(stdout.join(''));
     }
   };
   let printStderrBufferMessage = message => {
     let str = message.toString();
     stderr += str;
-    if (verbase) {
+
+    if (verbase || resume) {
       console.log(str);
     }
   };
@@ -78,7 +80,15 @@ function shell(path, args, opt, verbase) {
   return new Promise((resolve, reject) => {
     // path = "\"" + path + "\"";
     // var shell = cp.spawn(path + " " + args.join(" "));
-    const shell = cp.spawn(path, args);
+    const shell = cp.spawn(path, args, {});
+
+    // 登录并且禁用续传
+    if (cmd.indexOf('-l') > 0 && !resume) {
+      setTimeout(() => {
+        shell.kill();
+      }, 3000);
+    }
+
     shell.on('error', message => {
       console.log(message);
     });
@@ -86,25 +96,24 @@ function shell(path, args, opt, verbase) {
     shell.stderr.on('error', printStderrBufferMessage);
     shell.stdout.on('data', printStdoutBufferMessage);
     shell.stdout.on('error', printStdoutBufferMessage);
-    shell.on('exit', function (code) {
-      if (code !== 0) {
+
+    shell.on('exit', (code, signal) => {
+      if (code !== 0 && signal !== 'SIGTERM') {
         if (verbase) {
-          console.log('Failed: ' + code);
+          console.log('Failed: code ' + code + ' signal ' + signal);
         }
         reject({
           code,
-          stdout,
+          signal,
+          stdout: stdout.join(''),
           stderr,
-          path,
-          args
         });
       } else {
         resolve({
           code,
-          stdout,
+          signal,
+          stdout: stdout.join(''),
           stderr,
-          path,
-          args
         });
       }
     });

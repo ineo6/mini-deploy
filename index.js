@@ -73,6 +73,7 @@ const upload = async () => {
   if (res) {
     if (res.errorCode === 0) {
       console.log(res.message);
+      console.log('[mini-deploy] ' + res.message);
       process.exit(res.errorCode);
     } else if (res.errorCode === 2) {
       process.exit(res.errorCode);

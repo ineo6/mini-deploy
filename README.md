@@ -126,6 +126,11 @@ Options:
 
 输出登录结果到指定文件
 
+
+## 文档
+
+- [配套jenkins示例](http://idayer.com/wechat-mimi-program-build-with-jenkins/)
+
 ## 扩展
 
 - [每日优鲜便利购微信小程序集成 Jenkins 生成二维码发版](https://testerhome.com/topics/14913#reply-115145)

@@ -7,13 +7,13 @@ const errorCode = {
   success: 0,
   failed: 1,
   waitingLogin: 2,
-}
+};
 
 function createError(code, msg) {
   return {
     errorCode: code,
-    message: msg || ''
-  }
+    message: msg || '',
+  };
 }
 
 class WeChatCli {
@@ -88,8 +88,7 @@ class WeChatCli {
         if (stdout !== '') {
           const stdoutArr = stdout.split('\r\n');
           let exePath = stdoutArr.find(path => path.indexOf('.exe') != -1);
-          exePath = exePath.split('  ')
-            .find(path => path.indexOf('.exe') != -1);
+          exePath = exePath.split('  ').find(path => path.indexOf('.exe') != -1);
           exePath = path.join(path.dirname(exePath), 'cli.bat');
           wxPaths.unshift(exePath);
         }
@@ -156,7 +155,7 @@ class WeChatCli {
         msg.errorCode = errorCode.success;
         msg.message = '预览成功！请扫描二维码进入开发版！';
       } else {
-        msg.errorCode = errorCode.success;
+        msg.errorCode = errorCode.failed;
         msg.message = result.stderr;
       }
 
@@ -166,7 +165,6 @@ class WeChatCli {
 
       if (e.message === 'reLogin') {
         const reLoginResult = await this.reLogin();
-
 
         if (reLoginResult === 1) {
           // 继续上传
@@ -189,7 +187,9 @@ class WeChatCli {
       const linkUrl = path.join('./ws', this.loginConfig.originQr);
 
       // eslint-disable-next-line
-      console.log('[mini-deploy] <img src="' + linkUrl + '" alt="登录码" width="200" height="200" /><a href="' + linkUrl + '" target="_blank">登录码</a>');
+      console.log(
+        '[mini-deploy] <img src="' + linkUrl + '" alt="登录码" width="200" height="200" /><a href="' + linkUrl + '" target="_blank">登录码</a>'
+      );
     } else if (this.loginConfig.format === 'terminal') {
       console.log('[mini-deploy] 进入Build详情扫码登录微信开发工具');
     }
@@ -201,7 +201,7 @@ class WeChatCli {
 
     if (loginResult) {
       if (loginResult.code === 0 && loginResult.stdout.indexOf('login success') >= 0) {
-        flag = 1
+        flag = 1;
       } else if (loginResult.signal === 'SIGTERM') {
         console.log(loginResult.stdout);
         flag = 2;
@@ -230,7 +230,7 @@ class WeChatCli {
         msg.errorCode = errorCode.success;
         msg.message = '上传成功！请到微信小程序后台设置体验版或提交审核！';
       } else {
-        msg.errorCode = errorCode.success;
+        msg.errorCode = errorCode.failed;
         msg.message = result.stderr;
       }
 

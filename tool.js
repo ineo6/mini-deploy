@@ -126,7 +126,7 @@ async function executeCommand(command, options = {}) {
       resolve({
         error,
         stdout,
-        stderr
+        stderr,
       });
     });
   });

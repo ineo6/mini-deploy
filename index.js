@@ -42,20 +42,18 @@ const preview = async () => {
   let res = await weChatCli.preview();
 
   if (res) {
-    console.log(res.message);
-
-    if (res.errorCode === 0) {
+    if (res.errorCode === errorCode.success) {
       // jenkins中利用该信息显示Build详情
       if (program['preview.format'] === 'image') {
         const linkUrl = path.join('./ws', program['preview.qr']);
 
         // eslint-disable-next-line
-        console.log('[mini-deploy] <img src="' + linkUrl + '" alt="开发码" width="200" height="200" /><a href="' + linkUrl + '" target="_blank">开发码</a>');
+        console.log(
+          '[mini-deploy] <img src="' + linkUrl + '" alt="开发码" width="200" height="200" /><a href="' + linkUrl + '" target="_blank">开发码</a>'
+        );
       } else if (program['preview.format'] === 'terminal') {
         console.log('[mini-deploy] 进入Build详情扫开发码进入小程序');
       }
-    } else if (res.errorCode === 2) {
-      process.exit(res.errorCode);
     }
 
     process.exit(res.errorCode);
@@ -71,13 +69,14 @@ const upload = async () => {
   let res = await weChatCli.upload();
 
   if (res) {
-    if (res.errorCode === 0) {
+    if (res.errorCode === errorCode.success) {
       console.log(res.message);
       console.log('[mini-deploy] ' + res.message);
       process.exit(res.errorCode);
-    } else if (res.errorCode === 2) {
-      process.exit(res.errorCode);
     }
+
+    console.log(res.message);
+    process.exit(res.errorCode);
   } else {
     console.error('upload error!');
     console.error(res && res.message);
@@ -104,4 +103,6 @@ const start = async () => {
   }
 };
 
-start();
+(async () => {
+  await start();
+})();

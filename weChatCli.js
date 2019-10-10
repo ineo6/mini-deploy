@@ -88,7 +88,8 @@ class WeChatCli {
         if (stdout !== '') {
           const stdoutArr = stdout.split('\r\n');
           let exePath = stdoutArr.find(path => path.indexOf('.exe') != -1);
-          exePath = exePath.split('  ').find(path => path.indexOf('.exe') != -1);
+          exePath = exePath.split('  ')
+            .find(path => path.indexOf('.exe') != -1);
           exePath = path.join(path.dirname(exePath), 'cli.bat');
           wxPaths.unshift(exePath);
         }
@@ -104,7 +105,8 @@ class WeChatCli {
 
           return true;
         } else {
-          console.error('open error!');
+          console.error('open error!',);
+          console.error(result.stderr);
           return false;
         }
       } catch (e) {

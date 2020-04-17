@@ -73,7 +73,7 @@ class WeChatCli {
           wxPaths = [path.join(stdout, '/Contents/Resources/app.nw/bin/cli')];
         }
         // defaults read
-        wxPaths.push('/Applications/wechatwebdevtools.app/Contents/Resources/app.nw/bin/cli');
+        wxPaths.push('/Applications/wechatwebdevtools.app/Contents/Resources/app.nw/bin/cli', '/Applications/wechatwebdevtools.app/Contents/MacOS/cli');
         break;
       case 'win32':
         // defaults read
@@ -105,7 +105,7 @@ class WeChatCli {
 
           return true;
         } else {
-          console.error('open error!',);
+          console.error('open error!');
           console.error(result.stderr);
           return false;
         }

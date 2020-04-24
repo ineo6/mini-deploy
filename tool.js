@@ -21,13 +21,13 @@ function dateFormat(dataObj, fmt) {
     S: dataObj.getMilliseconds(), //毫秒
   };
   const week = {
-    '0': '/u65e5',
-    '1': '/u4e00',
-    '2': '/u4e8c',
-    '3': '/u4e09',
-    '4': '/u56db',
-    '5': '/u4e94',
-    '6': '/u516d',
+    0: '/u65e5',
+    1: '/u4e00',
+    2: '/u4e8c',
+    3: '/u4e09',
+    4: '/u56db',
+    5: '/u4e94',
+    6: '/u516d',
   };
   if (/(y+)/.test(fmt)) {
     fmt = fmt.replace(RegExp.$1, (dataObj.getFullYear() + '').substr(4 - RegExp.$1.length));
@@ -52,9 +52,49 @@ function fsExistsSync(path) {
   return true;
 }
 
+function evil(fn) {
+  // eslint-disable-next-line no-new-func
+  return new Function('return ' + fn)();
+}
+
+function parseJson(json) {
+  let pureJson = json.replace(/\r\n/g, '');
+  pureJson = pureJson.replace(/\n/g, '');
+
+  try {
+    return evil(`({${pureJson}})`);
+  } catch (e) {
+    return {};
+  }
+}
+
+function parserCode(stdout) {
+  const codeRegex = /code: (\d+)/;
+  const messageRegex = /message: '(.*)'/;
+
+  const result = {
+    code: '',
+    message: stdout
+  };
+
+  const matchCode = codeRegex.exec(stdout);
+
+  if (matchCode && matchCode.length === 2) {
+    result.code = matchCode[1];
+  }
+
+  const matchMessage = messageRegex.exec(stdout);
+
+  if (matchMessage && matchMessage.length === 2) {
+    result.message = matchMessage[1];
+  }
+
+  return result;
+}
+
 function shell(path, args, opt, verbase, resume) {
   const stdout = [];
-  let stderr = '';
+  let stderr = [];
 
   const cmd = `${path} ${args.join(' ')}`;
   if (verbase || resume) {
@@ -65,25 +105,23 @@ function shell(path, args, opt, verbase, resume) {
     stdout.push(str);
 
     if (verbase || resume) {
-      console.log(stdout.join(''));
+      process.stdout.write(message)
     }
   };
   let printStderrBufferMessage = message => {
     let str = message.toString();
-    stderr += str;
+    stderr.push(str);
 
     if (verbase || resume) {
-      console.log(str);
+      process.stdout.write(message)
     }
   };
 
   return new Promise((resolve, reject) => {
-    // path = "\"" + path + "\"";
-    // var shell = cp.spawn(path + " " + args.join(" "));
     const shell = cp.spawn(path, args, {});
 
     // 登录并且禁用续传
-    if (cmd.indexOf('-l') > 0 && !resume) {
+    if (cmd.indexOf('upload') > 0 && !resume) {
       setTimeout(() => {
         shell.kill();
       }, 3000);
@@ -92,28 +130,34 @@ function shell(path, args, opt, verbase, resume) {
     shell.on('error', message => {
       console.log(message);
     });
+    // cli返回的信息流是混乱的，正常输出会出现在stderr
     shell.stderr.on('data', printStderrBufferMessage);
     shell.stderr.on('error', printStderrBufferMessage);
     shell.stdout.on('data', printStdoutBufferMessage);
     shell.stdout.on('error', printStdoutBufferMessage);
 
     shell.on('exit', (code, signal) => {
-      if (code !== 0 && signal !== 'SIGTERM') {
+      const result = parserCode(stdout);
+
+      if ((code !== 0 || result.code === '10') && signal !== 'SIGTERM') {
         if (verbase) {
           console.log('Failed: code ' + code + ' signal ' + signal);
         }
+
+        // eslint-disable-next-line prefer-promise-reject-errors
         reject({
-          code,
+          code: result.code || code,
           signal,
           stdout: stdout.join(''),
-          stderr,
+          stderr: stderr.join(''),
+          message: result.message,
         });
       } else {
         resolve({
           code,
           signal,
           stdout: stdout.join(''),
-          stderr,
+          stderr: stderr.join(''),
         });
       }
     });
@@ -137,4 +181,5 @@ module.exports = {
   fsExistsSync: fsExistsSync,
   executeCommand: executeCommand,
   shell: shell,
+  parseJson: parseJson,
 };

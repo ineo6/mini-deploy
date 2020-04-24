@@ -56,6 +56,7 @@ const preview = async () => {
       }
     }
 
+    console.log(res.message);
     process.exit(res.errorCode);
   } else {
     console.error('preview error!');

@@ -125,7 +125,7 @@ class WeChatCli {
     } catch (e) {
       // console.log('executeCli error', e);
 
-      if (e.stderr.indexOf('需要重新登录') > 0) {
+      if (e.stderr.indexOf('需要重新登录') > 0 || e.stdout.indexOf('需要重新登录') > 0) {
         throw new Error('reLogin');
       }
 
@@ -135,13 +135,18 @@ class WeChatCli {
 
   async preview() {
     try {
+      const [format, output = ''] = this.previewConfig.qr;
+
       const args = [
-        '-p',
+        'preview',
+        '--project',
         this.workspace,
-        '--preview-qr-output',
-        this.previewConfig.qr.join('@'),
-        '--preview-info-output',
+        '--info-output',
         this.previewConfig.previewLog,
+        '--qr-format',
+        format,
+        '--qr-output',
+        output,
       ];
 
       if (this.previewConfig.compileCondition) {
@@ -158,7 +163,7 @@ class WeChatCli {
         msg.message = '预览成功！请扫描二维码进入开发版！';
       } else {
         msg.errorCode = errorCode.failed;
-        msg.message = result.stderr;
+        msg.message = result.message;
       }
 
       return msg;
@@ -202,7 +207,7 @@ class WeChatCli {
     let flag = 0;
 
     if (loginResult) {
-      if (loginResult.code === 0 && loginResult.stdout.indexOf('login success') >= 0) {
+      if (loginResult.code === 0 && (loginResult.stdout.indexOf('✔ login') >= 0 || loginResult.stderr.indexOf('✔ login') >= 0)) {
         flag = 1;
       } else if (loginResult.signal === 'SIGTERM') {
         console.log(loginResult.stdout);
@@ -218,11 +223,14 @@ class WeChatCli {
   async upload() {
     try {
       const result = await this.executeCli([
-        '-u',
-        [this.version, this.workspace].join('@'),
-        '--upload-desc',
+        'upload',
+        '--project',
+        this.workspace,
+        '--version',
+        this.version,
+        '--desc',
         this.uploadDesc.replace(/\s+/, ''),
-        '--upload-info-output',
+        '--info-output',
         this.uploadLog,
       ]);
 
@@ -243,6 +251,7 @@ class WeChatCli {
       if (e.message === 'reLogin') {
         const reLoginResult = await this.reLogin();
 
+        console.log('result', reLoginResult)
         if (reLoginResult === 1) {
           // 继续上传
           return await this.upload();
@@ -256,18 +265,20 @@ class WeChatCli {
   }
 
   async login() {
-    const args = ['-l'];
+    const args = ['login'];
 
     if (this.loginConfig.qr.length === 2) {
-      args.push('--login-qr-output');
-      args.push(this.loginConfig.qr.join('@'));
+      args.push('--qr-format');
+      args.push(this.loginConfig.qr[0]);
+      args.push('--qr-output');
+      args.push(this.loginConfig.qr[1]);
     } else if (this.loginConfig.qr.length === 1 && this.loginConfig.qr[0] !== 'terminal') {
-      args.push('--login-qr-output');
+      args.push('--qr-output');
       args.push(this.loginConfig.qr.join('@'));
     }
 
     if (this.loginConfig.loginLog) {
-      args.push('--login-result-output');
+      args.push('--result-output');
       args.push(this.loginConfig.loginLog);
     }
 

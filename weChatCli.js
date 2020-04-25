@@ -207,10 +207,15 @@ class WeChatCli {
     let flag = 0;
 
     if (loginResult) {
-      if (loginResult.code === 0 && (loginResult.stdout.indexOf('✔ login') >= 0 || loginResult.stderr.indexOf('✔ login') >= 0)) {
+      // 登录信息为以下格式，通过判断login出现次数得知是否扫码登录成功
+      // ✔ IDE server has started, listening on http://127.0.0.1:11359
+      // - preparing
+      // ✔ QR code generated
+      // - waiting for scan and login
+      // ✔ login
+      if (loginResult.code === 0 && (loginResult.stdout.split('login').length > 2 || loginResult.stderr.split('login').length > 2)) {
         flag = 1;
       } else if (loginResult.signal === 'SIGTERM') {
-        console.log(loginResult.stdout);
         flag = 2;
       }
     } else {
@@ -251,7 +256,6 @@ class WeChatCli {
       if (e.message === 'reLogin') {
         const reLoginResult = await this.reLogin();
 
-        console.log('result', reLoginResult)
         if (reLoginResult === 1) {
           // 继续上传
           return await this.upload();

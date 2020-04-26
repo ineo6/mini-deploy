@@ -1,6 +1,6 @@
 {
   "name": "mini-deploy",
-  "version": "1.4.5",
+  "version": "2.0.0",
   "description": "微信小程序发布助手",
   "main": "index.js",
   "bin": {

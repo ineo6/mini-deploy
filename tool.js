@@ -121,9 +121,9 @@ function shell(path, args, opt, verbase, resume) {
     const shell = cp.spawn(path, args, {});
 
     // 登录并且禁用续传
-    if (cmd.indexOf('upload') > 0 && !resume) {
+    if (cmd.indexOf('login') > 0 && !resume) {
       setTimeout(() => {
-        shell.kill();
+        process.exit(0)
       }, 3000);
     }
 

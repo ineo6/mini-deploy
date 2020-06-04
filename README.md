@@ -8,6 +8,8 @@
 [![Watch on GitHub][github-watch-badge]][github-watch]
 [![Star on GitHub][github-star-badge]][github-star]
 
+**推荐大家使用全新的发布助手 [mp-ci](https://github.com/ineo6/mp-ci)，无需登录，体验真正的一键发布。**
+
 微信小程序发布助手, 支持预览和上传。可以和`jenkins`结合使用，实现微信小程序自动化发布。
 
 ## 功能特性
